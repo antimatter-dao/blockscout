@@ -10,6 +10,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
+  alias Explorer.SmartContract.RustVerifierInterface
   alias Explorer.SmartContract.Solidity.CodeCompiler
 
   require Logger
@@ -23,27 +24,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   def evaluate_authenticity(address_hash, params) do
     try do
-      latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
-      evm_version = Map.get(params, "evm_version", latest_evm_version)
-
-      all_versions = [evm_version | previous_evm_versions(evm_version)]
-
-      all_versions_extra = all_versions ++ [evm_version]
-
-      Enum.reduce_while(all_versions_extra, false, fn version, acc ->
-        case acc do
-          {:ok, _} = result ->
-            {:cont, result}
-
-          {:error, error}
-          when error in [:name, :no_creation_data, :deployed_bytecode, :compiler_version, :constructor_arguments] ->
-            {:halt, acc}
-
-          _ ->
-            cur_params = Map.put(params, "evm_version", version)
-            {:cont, verify(address_hash, cur_params)}
-        end
-      end)
+      evaluate_authenticity_inner(RustVerifierInterface.enabled?(), address_hash, params)
     rescue
       exception ->
         Logger.error(fn ->
@@ -53,6 +34,34 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           ]
         end)
     end
+  end
+
+  def evaluate_authenticity_inner(true, address_hash, params) do
+    RustVerifierInterface.verify_multi_part()
+  end
+
+  def evaluate_authenticity_inner(false, address_hash, params) do
+    latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
+    evm_version = Map.get(params, "evm_version", latest_evm_version)
+
+    all_versions = [evm_version | previous_evm_versions(evm_version)]
+
+    all_versions_extra = all_versions ++ [evm_version]
+
+    Enum.reduce_while(all_versions_extra, false, fn version, acc ->
+      case acc do
+        {:ok, _} = result ->
+          {:cont, result}
+
+        {:error, error}
+        when error in [:name, :no_creation_data, :deployed_bytecode, :compiler_version, :constructor_arguments] ->
+          {:halt, acc}
+
+        _ ->
+          cur_params = Map.put(params, "evm_version", version)
+          {:cont, verify(address_hash, cur_params)}
+      end
+    end)
   end
 
   def evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
