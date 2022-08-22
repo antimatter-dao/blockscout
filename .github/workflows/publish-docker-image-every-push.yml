@@ -19,6 +19,27 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true || github.event_name == 'push'
     steps:
+
+      # https://github.com/orgs/community/discussions/26716
+      - name: Delete Old Package Versions
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.AUTO_DELETE_OLD_VERSION_PAT }}
+          script: |
+            const response = await github.request("GET /user/packages/container/${{ env.PACKAGE_NAME }}/versions",
+              { per_page: ${{ env.PER_PAGE }}
+            });
+            for(version of response.data) {
+                if (version.metadata.container.tags.length == 0) {
+                    console.log("delete " + version.id)
+                    const deleteResponse = await github.request("DELETE /user/packages/container/${{ env.PACKAGE_NAME }}/versions/" + version.id, { });
+                    console.log("status " + deleteResponse.status)
+                }
+            }
+        env:
+          PACKAGE_NAME: "blockscout"
+          PER_PAGE: 99
+
       - name: Check out the repo
         uses: actions/checkout@v3
 
@@ -40,6 +61,8 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=true
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
@@ -48,7 +71,7 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}, latest
+          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
@@ -67,3 +90,4 @@ jobs:
             JSON_RPC=
             COIN_NAME=
             SUBNETWORK=
+
