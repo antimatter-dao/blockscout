@@ -74,9 +74,32 @@ jobs:
             SUBNETWORK=
 
       # https://github.com/orgs/community/discussions/26716
-      - name: Delete Old Package Versions
+      - name: Delete Old Package Versions (organization)
         uses: actions/github-script@v6
         if: ${{ env.HAVE_AUTO_DELETE_OLD_VERSION_PAT == 'true' }}
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.AUTO_DELETE_OLD_VERSION_PAT }}
+          script: |
+            const response = await github.request("GET /orgs/${{ github.repository_owner }}/packages/container/${{ env.PACKAGE_NAME }}/versions",
+              { per_page: ${{ env.PER_PAGE }}
+            });
+            for(version of response.data) {
+                if (version.metadata.container.tags.length == 0) {
+                    console.log("delete " + version.id)
+                    const deleteResponse = await github.request("DELETE /orgs/${{ github.repository_owner }}/packages/container/${{ env.PACKAGE_NAME }}/versions/" + version.id, { });
+                    console.log("status " + deleteResponse.status)
+                }
+            }
+        env:
+          PACKAGE_NAME: "blockscout"
+          PER_PAGE: 99
+          
+      # https://github.com/orgs/community/discussions/26716
+      - name: Delete Old Package Versions (user)
+        uses: actions/github-script@v6
+        if: ${{ env.HAVE_AUTO_DELETE_OLD_VERSION_PAT == 'true' }}
+        continue-on-error: true
         with:
           github-token: ${{ secrets.AUTO_DELETE_OLD_VERSION_PAT }}
           script: |
