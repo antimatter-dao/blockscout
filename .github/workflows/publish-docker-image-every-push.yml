@@ -10,13 +10,16 @@ on:
       - closed
 
 env:
+  OTP_VERSION: '24.3.4.1'
+  ELIXIR_VERSION: '1.13.4'
+  NEXT_RELEASE_VERSION: 5.0.0
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
-    if: github.event.pull_request.merged == true || github.event_name == 'push'
+    if: github.event_name == 'push' || (github.event.pull_request.merged == true && github.base_ref == 'refs/heads/master')
     runs-on: ubuntu-latest
     env:
        HAVE_AUTO_DELETE_OLD_VERSION_PAT: ${{ secrets.AUTO_DELETE_OLD_VERSION_PAT != '' }}
@@ -74,9 +77,32 @@ jobs:
             SUBNETWORK=
 
       # https://github.com/orgs/community/discussions/26716
-      - name: Delete Old Package Versions
+      - name: Delete Old Package Versions (organization)
         uses: actions/github-script@v6
         if: ${{ env.HAVE_AUTO_DELETE_OLD_VERSION_PAT == 'true' }}
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.AUTO_DELETE_OLD_VERSION_PAT }}
+          script: |
+            const response = await github.request("GET /orgs/${{ github.repository_owner }}/packages/container/${{ env.PACKAGE_NAME }}/versions",
+              { per_page: ${{ env.PER_PAGE }}
+            });
+            for(version of response.data) {
+                if (version.metadata.container.tags.length == 0) {
+                    console.log("delete " + version.id)
+                    const deleteResponse = await github.request("DELETE /orgs/${{ github.repository_owner }}/packages/container/${{ env.PACKAGE_NAME }}/versions/" + version.id, { });
+                    console.log("status " + deleteResponse.status)
+                }
+            }
+        env:
+          PACKAGE_NAME: "blockscout"
+          PER_PAGE: 99
+          
+      # https://github.com/orgs/community/discussions/26716
+      - name: Delete Old Package Versions (user)
+        uses: actions/github-script@v6
+        if: ${{ env.HAVE_AUTO_DELETE_OLD_VERSION_PAT == 'true' }}
+        continue-on-error: true
         with:
           github-token: ${{ secrets.AUTO_DELETE_OLD_VERSION_PAT }}
           script: |
