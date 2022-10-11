@@ -1,6 +1,0 @@
-make --dry-run --always-make --keep-going --print-directory
-make: Entering directory `/Users/chenhuayi/pushi/b2/blockscout'
-make: Leaving directory `/Users/chenhuayi/pushi/b2/blockscout'
- 
-make: *** No targets specified and no makefile found.  Stop.
-
