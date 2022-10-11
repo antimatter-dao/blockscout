@@ -10,7 +10,7 @@ $tile-type-progress-bar-color: $tertiary;
 a.tile-title { color: $tertiary !important; }
 
 // footer
-$footer-background-color: $primary;
+$footer-background-color: #000;
 $footer-title-color: #fff;
 $footer-text-color: $secondary;
 $footer-item-disc-color: $secondary;
@@ -95,7 +95,7 @@ $dashboard-banner-network-plain-container-height: 150px;
       }
 
       &::after {
-        background-color: transparent;
+        background-color: rgba(255,255,255, 0.6);
         background-image: url($dashboard-banner-network-stats-static-image);
         background-position: 50% 50%;
         background-repeat: no-repeat;
@@ -165,10 +165,9 @@ $dark-primary-alternate: #a96c55;
   .dashboard-banner-network-stats-value {
     color: $dark-primary !important;
   }
-  .layout-container .dashboard-banner-container {
-    background-color: #282945 !important;
-  }
   .dashboard-banner-network-plain-container::after {
     box-shadow: none !important;
+    background-color: rgba(255,255,255,0.1) !important;
+
   }
 }
