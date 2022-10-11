@@ -44,8 +44,8 @@ $dark-primary-alternate: $dark-primary;
 		}
 	}
 	.navbar.navbar-primary .form-control {
-		background-color: $dark-light-bg !important;
-		border-color: $dark-light-bg !important;
+		background-color: #171717 !important;
+		border-color: #171717 !important;
 		color: #fff;
 		&::placeholder {
 			color: $labels-dark;
@@ -83,11 +83,10 @@ $dark-primary-alternate: $dark-primary;
 
 	.layout-container .dashboard-banner-container {
 		background-image: none;
-		background-color: $dark-bg;
+		background-color: transparent;
 	}
-	.dashboard-banner-network-plain-container,
 	.dashboard-banner-network-plain-container::after {
-		background-color: $dark-light-bg;
+		background-color: rgba(255,255,255,0.1);
 	}
 	.dashboard-banner-network-stats-label,
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-label {
@@ -379,7 +378,7 @@ $dark-primary-alternate: $dark-primary;
 		border-bottom-color: darken($labels-dark, 30);
 	}
 	.main-search-autocomplete {
-        background-color: $dark-light !important;
+        background-color: #171717 !important;
         color: #fff !important;
     }
 	.table th, .table td {
